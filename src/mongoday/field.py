@@ -24,6 +24,8 @@ class MongoIDField(BaseField):
     def value(self, value):
         if value:
             self._value = ObjectId(value)
+        else:
+            raise Exception("MongoIDField expects a value")
 
 
 class StringField(BaseField):
@@ -44,7 +46,12 @@ class IntegerField(BaseField):
     @value.setter
     def value(self, value):
         if value is not None:
-            self._value = int(value)
+            if isinstance(value, int):
+                self._value = value
+            else:
+                raise ValueError("IntegerField expects an integer")
+        else:
+            self._value = 0
 
 
 class BooleanField(BaseField):
@@ -55,7 +62,12 @@ class BooleanField(BaseField):
     @value.setter
     def value(self, value):
         if value is not None:
-            self._value = bool(value)
+            if isinstance(value, bool):
+                self._value = value
+            else:
+                raise ValueError("BooleanField expects a boolean")
+        else:
+            self._value = None
 
 
 class FloatField(BaseField):
@@ -66,7 +78,12 @@ class FloatField(BaseField):
     @value.setter
     def value(self, value):
         if value is not None:
-            self._value = float(value)
+            if isinstance(value, float):
+                self._value = value
+            else:
+                raise ValueError("FloatField expects a float")
+        else:
+            self._value = 0.0
 
 
 class MapField(BaseField):
@@ -76,7 +93,13 @@ class MapField(BaseField):
 
     @value.setter
     def value(self, value):
-        self._value = dict(value) if value else {}
+        if value is not None:
+            if value and isinstance(value, dict):
+                self._value = value
+            else:
+                raise ValueError("MapField expects a dict")
+        else:
+            self._value = {}
 
 
 class ListField(BaseField):
@@ -90,8 +113,13 @@ class ListField(BaseField):
 
     @value.setter
     def value(self, value):
-        if value:
-            self._value = list(value)
+        if value is not None:
+            if value and isinstance(value, list):
+                self._value = value
+            else:
+                raise ValueError("ListField expects a list")
+        else:
+            self._value = []
 
 
 class DateTimeField(BaseField):
@@ -101,10 +129,29 @@ class DateTimeField(BaseField):
 
     @value.setter
     def value(self, value):
-        if isinstance(value, datetime):
-            self._value = value
+        if value is not None:
+            if isinstance(value, datetime):
+                self._value = value
+            else:
+                raise ValueError("DateTimeField expects a datetime object")
         else:
-            raise ValueError("DateTimeField expects a datetime object")
+            self._value = None
+
+
+class TimestampField(BaseField):
+    @property
+    def value(self):
+        return super().value
+
+    @value.setter
+    def value(self, value):
+        if value is not None:
+            if isinstance(value, int):
+                self._value = value
+            else:
+                raise ValueError("DateTimeField expects a datetime object")
+        else:
+            self._value = None
 
 
 class EmbeddedDocumentField(BaseField):
@@ -122,7 +169,13 @@ class EmbeddedDocumentField(BaseField):
 
     @value.setter
     def value(self, value):
-        self._value = self.embedded_model(value)
+        if value is not None:
+            if isinstance(value, dict):
+                self._value = self.embedded_model(value)
+            else:
+                raise ValueError("EmbeddedDocumentField expects a dict")
+        else:
+            self._value = None
 
 
 class ReferenceField(BaseField):
@@ -134,5 +187,10 @@ class ReferenceField(BaseField):
 
     @value.setter
     def value(self, value):
-        if value:
-            self._value = ObjectId(value)
+        if value is not None:
+            if isinstance(value, str):
+                self._value = ObjectId(value)
+            else:
+                raise ValueError("ReferenceField expects an ObjectId")
+        else:
+            self._value = None

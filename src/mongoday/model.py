@@ -1,11 +1,26 @@
 from .utils.normalizer import MongoNormalizer
 from .utils.func import cal_timestamp
-from .field import BaseField, MongoIDField, IntegerField, FloatField, StringField, BooleanField, MapField
+from .field import *
 from bson.objectid import ObjectId
 
 
 class ValueErrorException(Exception):
     pass
+
+
+DATA_TYPE_MAPPINGS = {
+    'MongoIDField': MongoIDField,
+    'FloatField': FloatField,
+    'IntegerField': IntegerField,
+    'StringField': StringField,
+    'BooleanField': BooleanField,
+    'MapField': MapField,
+    'DateTimeField': DateTimeField,
+    'EmbeddedDocumentField': EmbeddedDocumentField,
+    'ReferenceField': ReferenceField,
+    'ListField': ListField,
+
+}
 
 
 class BaseModel(object):
@@ -16,8 +31,8 @@ class BaseModel(object):
     def __init__(self, collection, config=None):
         self.id = MongoIDField()
         self.deleted = BooleanField(False)
-        self.created = BaseField()
-        self.changed = BaseField()
+        self.created = TimestampField()
+        self.changed = TimestampField()
 
         self._collection = collection
         self.config = config
@@ -26,7 +41,9 @@ class BaseModel(object):
             try:
                 self._prepare_indexes(self._collection)
             except Exception as e:
-                raise Exception(f"Error creating indexes: {e}")
+                # raise Exception(f"Error creating indexes: {e}")
+                # TODO: log error or do something more useful
+                pass
 
         if self.id:
             self.initialize()
@@ -52,21 +69,9 @@ class BaseModel(object):
                 collection.create_index(index_keys, **index_options)
 
     def convert_value_by_field_type(self, field_name, value):
-        attr = object.__getattribute__(self, field_name)
-        if attr and isinstance(attr, StringField):
-            return str(value)
-        elif attr and isinstance(attr, IntegerField):
-            return int(value)
-        elif attr and isinstance(attr, FloatField):
-            return float(value)
-        elif attr and isinstance(attr, BooleanField):
-            return bool(value)
-        elif attr and isinstance(attr, MongoIDField):
-            return ObjectId(value)
-        elif attr and isinstance(attr, MapField):
-            return dict(value)
-        else:
-            return value
+        field_class = type(self.__dict__[field_name])
+        field_object = field_class(value)
+        return field_object.value
 
     def __setattr__(self, key, value):
         try:
@@ -83,15 +88,8 @@ class BaseModel(object):
                 if isinstance(attr, MongoIDField):
                     object.__setattr__(self, key, MongoIDField(value))
                 else:
-                    data_type_mappings = {
-                        'FloatField': FloatField,
-                        'IntegerField': IntegerField,
-                        'StringField': StringField,
-                        'BooleanField': BooleanField
-                    }
-
                     field_type_class = type(attr).__name__
-                    field_class = data_type_mappings.get(field_type_class)
+                    field_class = DATA_TYPE_MAPPINGS.get(field_type_class)
                     if field_class:
                         value = field_class(value)
                     else:
@@ -198,12 +196,8 @@ class BaseModel(object):
             for k in data:
                 self.__setattr__(k, data[k])
 
-    def toDict(self):
-        return {
-            'id': self.id,
-            'created': self.created,
-            'changed': self.changed
-        }
+    def __str__(self):
+        return str(self.get_fields())
 
     @staticmethod
     def mongo_id(mongo_id):
