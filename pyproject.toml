@@ -1,12 +1,12 @@
 [project]
 name = "mongoday"
-version = "0.0.2"
+version = "0.0.4"
 authors = [
   { name = "Abrar Arshad", email = "abrar.arshad01@gmail.com" },
 ]
 description = "A simple way to create documents in MongoDB"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.6"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

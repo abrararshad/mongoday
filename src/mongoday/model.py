@@ -2,6 +2,7 @@ from .utils.normalizer import MongoNormalizer
 from .utils.func import cal_timestamp
 from .field import *
 from bson.objectid import ObjectId
+from .index_store import IndexStore, create_index_hash
 
 
 class ValueErrorException(Exception):
@@ -37,6 +38,8 @@ class BaseModel(object):
         self._collection = collection
         self.config = config
 
+        self.store = IndexStore()
+
         if self.indexes:
             try:
                 self._prepare_indexes(self._collection)
@@ -50,9 +53,18 @@ class BaseModel(object):
 
     def add_indexes(self, indexes):
         if isinstance(indexes, list):
-            self.indexes.extend(indexes)
+            unique_indexes = [index for index in indexes if str(index) not in map(str, self.indexes)]
+            self.indexes.extend(unique_indexes)
 
     def _prepare_indexes(self, collection):
+        computed_hash = create_index_hash(self.indexes)
+        stored_hash = self.store.get_hash(collection.name)
+        if computed_hash != stored_hash:
+            print('dropping indexes')
+            collection.drop_indexes()
+
+        self.store.set_hash(collection.name, computed_hash)
+
         existing_indexes = collection.list_indexes()
         existing_index_names = [index['name'] for index in existing_indexes]
 

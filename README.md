@@ -1,6 +1,8 @@
 # mongoday
 
-`mongoday` is a Python library that simplifies document creation in MongoDB. It does not depend on specific library as it is agnostic but built using `pymongo` library. This README provides a brief overview of how to use `mongoday` to work with documents in MongoDB. 
+`mongoday` is a Python library that simplifies document creation in MongoDB. It does not depend on specific library as
+it is agnostic but built using `pymongo` library. This README provides a brief overview of how to use `mongoday` to work
+with documents in MongoDB.
 
 Its development is undergoing but it provides a good starting point for creating documents in MongoDB.
 
@@ -14,11 +16,12 @@ pip install mongoday
 
 # Getting Started
 
-To get started with `mongoday`, you'll need to create a model for your MongoDB documents. Here's an example of how to create a simple model using `mongoday`:
+To get started with `mongoday`, you'll need to create a model for your MongoDB documents. Here's an example of how to
+create a simple model using `mongoday`:
 
 ```
 from mongoday.field import BaseField, MongoIDField, StringField
-from mongoday.model import BaseModel
+from mongoday.model import BaseModel, IndexStore
 from pymongo import MongoClient
 
 class User(BaseModel):
@@ -31,6 +34,9 @@ client = MongoClient("mongodb://localhost:27017/")
 db = client["mydatabase"]
 collection = db["users"]
 
+# Setup the store (mentioned below) for tracking indexes
+index_store = IndexStore(collection=db["index_store"])
+
 # Initialize a User document
 user = User(collection)
 user.username = "John"
@@ -42,7 +48,14 @@ print("Username:", retrieved_user.username)
 ```
 
 ## Indexes
+
+````
+# Before using indexes, make sure to setup store index which tracks the indexes and recreates automatically if changed
+index_store = IndexStore(collection=db["index_store"])
+````
+
 To specify indexes, add an indexes attribute to your model class. Here's an example:
+
 
 ````
 class User(BaseModel):
@@ -51,7 +64,10 @@ class User(BaseModel):
         [('created', -1)]  # Create a descending index on the 'created' field
     ]
 ````
-Or could be specified in the constructor, this way it won't override the default indexes specified by the BaseModel class but will be added to them.
+
+Or could be specified in the constructor, this way it won't override the default indexes specified by the BaseModel
+class but will be added to them.
+
 ````
 class User(BaseModel):
     def __init__(self, collection):
@@ -66,7 +82,9 @@ class User(BaseModel):
 ````
 
 # Contribution
-Feel free to contribute to this project by opening issues or submitting pull requests on [GitHub](https://github.com/abrararshad/mongoday).
+
+Feel free to contribute to this project by opening issues or submitting pull requests
+on [GitHub](https://github.com/abrararshad/mongoday).
 
 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
